@@ -37,9 +37,7 @@ module FreeMessageQueue
       messages = all_messages.sort!
       return nil if messages.size == 0
 
-      msg_bin = File.open(messages.first, "rb") { |f| f.read }
-      FileUtils.rm messages.first
-      remove_message(Marshal.load(msg_bin))
+      remove_message(read_message(messages.first, true))
     end
 
     # add one message to the queue (will be saved in file system)
@@ -56,12 +54,24 @@ module FreeMessageQueue
       return true
     end
 
+    def read_message(filename, delete)
+      msg_bin = File.open(filename, "rb") { |f| f.read }
+      FileUtils.rm filename if delete
+      Marshal.load(msg_bin)
+    end
+
     # *CONFIGURATION* *OPTION*
     # sets the path to the folder that holds all messages, this will
     # create the folder if it doesn't exist
+    # also loads existing messages into the queue statistics
     def folder=(path)
       FileUtils.mkdir_p path unless File.exist? path
       @folder_path = path
+      @size = 0
+      @bytes = 0
+      all_messages.each do |f|
+        add_message(read_message(f, false))
+      end
     end
 
     # remove all items from the queue
