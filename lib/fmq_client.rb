@@ -19,6 +19,31 @@
 require 'net/http'
 
 module FreeMessageQueue
+  # This is the default message implementation in the queue system
+  class Message
+    attr_accessor :next, # reference to next Message if there is one
+      :payload, # the content itself
+      :created_at, # when came the message into the system
+      :content_type, # the content type of the message
+      :option # options hash (META-DATA) for the message
+
+    # Create a message item. The payload is often just a string
+    def initialize(payload, content_type = "text/plain", created_at = Time.new)
+      @payload = payload
+      @created_at = created_at
+      @content_type = content_type
+      @option = {}
+      if block_given? then
+        yield self
+      end
+    end
+
+    # Size of item in bytes
+    def bytes
+      @payload.size
+    end
+  end
+
   # Here you can find the client side api for the free message queue.
   # This api is build using the net/http facilitys
   #
@@ -107,3 +132,4 @@ module FreeMessageQueue
     end
   end
 end
+
