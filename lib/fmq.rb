@@ -31,6 +31,7 @@ Dir.glob(File.dirname(__FILE__) + "/fmq/queues/*.rb").each do |file|
 end
 
 # load all parts in right order
-['boot', 'admin', 'client', 'server'].each do |file|
-  require File.dirname(__FILE__) + "/fmq/#{file}"
-end
+require File.dirname(__FILE__) + "/fmq/boot"
+require File.dirname(__FILE__) + "/fmq/admin"
+require File.dirname(__FILE__) + "/fmq_client"
+require File.dirname(__FILE__) + "/fmq/server"
