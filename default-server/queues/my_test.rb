@@ -3,7 +3,7 @@ class MyTestQueue < FreeMessageQueue::BaseQueue
     puts "INCOMMING: #{message.payload}"
   end
 
-  def poll
+  def poll(request)
     FreeMessageQueue::Message.new "Hello World", "text/plain" do |m|
       m.option["Time"] = Time.now
     end

@@ -52,7 +52,7 @@ module FreeMessageQueue
     end
 
     # Return an message from the queue or nil if the queue is empty
-    def poll()
+    def poll(request)
       unless empty?
         # remove allways the first item
         message = @first_message

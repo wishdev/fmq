@@ -32,7 +32,7 @@ module FreeMessageQueue
   # *NOTE* the put method is not implemented in this queue. It is a poll only queue.
   class FileQueue < BaseQueue
     # Return the file and content type
-    def poll()
+    def poll(request)
       file_content = ""
       File.open(@file_path, "rb") do |f|
         file_content = f.read

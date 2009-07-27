@@ -37,7 +37,7 @@ module FreeMessageQueue
     end
 
     # Returns one item from the queue
-    def poll()
+    def poll(request)
       @semaphore.synchronize {
         super
       }

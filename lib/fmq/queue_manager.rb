@@ -102,11 +102,11 @@ module FreeMessageQueue
     end
 
     # This returns one message from the passed queue
-    def poll(name)
+    def poll(name, request)
       if queue_exists? name
         @log.debug("[QueueManager] Poll from queue '#{name}' with #{queue(name).size} messages")
         if queue(name).respond_to? :poll
-          queue_item = queue(name).poll
+          queue_item = queue(name).poll(request)
         else
           raise QueueManagerException.new("[QueueManager] You can't poll from queue '#{name}'", caller)
         end

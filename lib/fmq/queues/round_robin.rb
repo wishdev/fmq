@@ -39,9 +39,9 @@ module FreeMessageQueue
       @queue_index = -1 # as starting point will be 0 later by using next_queue
     end
 
-    def poll
+    def poll(request)
       if allowed? :poll
-        manager.poll(@redirect_to[next_queue])
+        manager.poll(@redirect_to[next_queue], request)
       else
         raise QueueException.new("[RoundRobinQueue] you can't poll from this queue", caller)
       end

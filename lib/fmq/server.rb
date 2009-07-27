@@ -59,7 +59,7 @@ module FreeMessageQueue
     # Returns an item from queue and sends it to the client.
     # If there is no item to fetch send an 204 (NoContent) and same as HEAD
     def process_get(request, queue_path)
-      message = @queue_manager.poll(queue_path)
+      message = @queue_manager.poll(queue_path, request)
 
       unless message.nil? then
         response = Rack::Response.new([], 200)

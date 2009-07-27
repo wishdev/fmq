@@ -32,7 +32,7 @@ module FreeMessageQueue
   # *NOTE* the put method is not implemented in this queue. It is a poll only queue.
   class FilePersistentQueue < BaseQueue
     # Return the
-    def poll()
+    def poll(request)
       check_folder_name
       messages = all_messages.sort!
       return nil if messages.size == 0

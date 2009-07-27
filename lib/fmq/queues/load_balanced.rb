@@ -62,8 +62,8 @@ module FreeMessageQueue
     end
 
     # Return one message from one of the queues
-    def poll
-      @queues[next_poll_index].poll
+    def poll(request)
+      @queues[next_poll_index].poll(request)
     end
 
     # Put an item to one of the queues
