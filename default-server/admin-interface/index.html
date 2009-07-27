@@ -22,7 +22,7 @@
 				<p>
 					Queue path: <select id="post-queue-name"><option>NONE</option></select><br />
 					<textarea id="post-body" class="block-text" rows="5" cols="20"></textarea><br />
-					<input id="post-button" type="button" value="send" 
+					<input id="post-button" type="button" value="send"
 						onclick="sendMessageToQueue('post-button', 'post-queue-name', 'post-body');"/>
 				</p>
 
@@ -31,7 +31,7 @@
 				<p>
 					Queue path: <select id="get-queue-name"><option>NONE</option></select><br />
 					<code id="get-body" class="block-text"></code>
-					<input id="get-button" type="button" value="get one" 
+					<input id="get-button" type="button" value="get one"
 						onclick="getMessageFromQueue('get-button', 'get-queue-name', 'get-body');"/>
 				</p>
 			</div>
@@ -40,7 +40,7 @@
 				<h2>Queues</h2>
 				<p>
 					<span id="queue-table-space"></span>
-					<input type="button" value="delete" onclick="deleteQueue('queue_to_delete');"/> 
+					<input type="button" value="delete" onclick="deleteQueue('queue_to_delete');"/>
 					<input type="button" value="update" onclick="updateTable();" />
 				</p>
 				<!-- CREATE QUEUE -->
@@ -55,7 +55,7 @@
 			<div style="clear: both;">&nbsp;</div>
 		</div>
 		<div id="footer">
-			<p>This interface is based on <a href="http://www.prototypejs.org/">prototype</a>. 
+			<p>This interface is based on <a href="http://www.prototypejs.org/">prototype</a>.
 				Design by <a href="http://www.freecsstemplates.org/">Free CSS Templates</a>.</p>
 		</div>
 	</body>

@@ -1,5 +1,5 @@
 var ADMIN_QUEUE_PATH = '/admin/backend';
-			
+
 function toggle_element (element_id) {
 	$(element_id).disabled = !$(element_id).disabled;
 }
@@ -29,12 +29,12 @@ function updateTable() {
 }
 
 function fillTableSpaceWithQueues(table_space, queues) {
-	var list = '';	
-		
+	var list = '';
+
 	queues.each ( function (queue) {
-		list += "<div><small>" + 
-			'<input type="checkbox" class="queue_to_delete" value="' + queue[0] + '"/><strong>' + 
-			queue[0] + "</strong><br />(" + queue[1] + "/" + queue[2] +") bytes (" + 
+		list += "<div><small>" +
+			'<input type="checkbox" class="queue_to_delete" value="' + queue[0] + '"/><strong>' +
+			queue[0] + "</strong><br />(" + queue[1] + "/" + queue[2] +") bytes (" +
 			queue[3] + "/" + queue[4] + ") messages</small> " +
 			'</div>';
 	});
@@ -47,15 +47,15 @@ function fillSelectWithQueuePaths(select_id, queues) {
 	while ($(select_id).hasChildNodes()) {
 		$(select_id).removeChild($(select_id).lastChild);
 	}
-	
+
 	queues.each ( function (queue) {
 		elem = document.createElement("option");
-		elem.label = elem.value = elem.text = queue[0]; 
+		elem.label = elem.value = elem.text = queue[0];
 		$(select_id).appendChild(elem);
 	});
 }
 
-function getMessageFromQueue(button_id, select_id, output_id) {	
+function getMessageFromQueue(button_id, select_id, output_id) {
 	new Ajax.Request($(select_id).value, {
 		method:'GET',
 		onLoading: function(transport) {
@@ -71,18 +71,18 @@ function getMessageFromQueue(button_id, select_id, output_id) {
                 }
 		  toggle_element(button_id);
 		},
-		onFailure: function(transport){ 
+		onFailure: function(transport){
 		  alert(transport.getHeader("ERROR"));
 		  toggle_element(button_id);
 		}
 	});
 }
 
-function sendMessageToQueue(button_id, select_id, input_id) {	
+function sendMessageToQueue(button_id, select_id, input_id) {
 	new Ajax.Request($(select_id).value, {
 		method:'POST',
 		postBody: $(input_id).value,
-		contentType: "text/plain", 
+		contentType: "text/plain",
 		onLoading: function(transport) {
 		  toggle_element(button_id);
 		},
@@ -90,7 +90,7 @@ function sendMessageToQueue(button_id, select_id, input_id) {
 		  updateTable();
 		  toggle_element(button_id);
 		},
-		onFailure: function(transport) { 
+		onFailure: function(transport) {
 		  alert(transport.getHeader("ERROR"));
 		  toggle_element(button_id);
 		}
@@ -100,9 +100,9 @@ function sendMessageToQueue(button_id, select_id, input_id) {
 function createQueue() {
 	new Ajax.Request(ADMIN_QUEUE_PATH, {
 		method: 'POST',
-		postBody: "_method=create" + 
-		  "&path=" + "/" + $("queue-create-path").value + 
-		  "&max_messages=" + parseInt($("queue-create-max-messages").value) + 
+		postBody: "_method=create" +
+		  "&path=" + "/" + $("queue-create-path").value +
+		  "&max_messages=" + parseInt($("queue-create-max-messages").value) +
 		  "&max_size=" + $("queue-create-size").value,
 		onSuccess: function(transport) {
 		  updateSelects();

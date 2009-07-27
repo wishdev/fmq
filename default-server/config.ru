@@ -18,12 +18,12 @@ queue_manager = FreeMessageQueue::QueueManager.new(true) do
   #      if you want some queues right from startup
   #        define there url and constraints here
   # =====================================================
-  
+
   # the path to the queue e.g. /app1/myframe/test1
   # means http://localhost:5884/app1/myframe/test1
   # this parameter is not optional
   setup_queue "/fmq_test/test1" do |q|
-    # this defines the maximum count of messages that 
+    # this defines the maximum count of messages that
     # can be in the queue, if the queue is full every
     # new message will be rejected with a http error
     # this parameter is optional if you don't specify
@@ -34,15 +34,15 @@ queue_manager = FreeMessageQueue::QueueManager.new(true) do
     # valid extensions are kb, mb, gb
     q.max_size = 10.kb
   end
-  
+
   # if you want you can specify the class of the queue
   # this is interessting if you write your own queues
   setup_queue "/fmq_test/test2", FreeMessageQueue::LoadBalancedQueue
-  
+
   # if you have special queues include put them into the queues
   # folder and and use them (this MyTestQueue is places in queues/mytest.rb)
   setup_queue "/fmq_test/test3", MyTestQueue
-  
+
   # this is a forwarding queue wich forwards one message
   # to some other queues
   setup_queue "/fmq_test/forward_to_1_and_2", FreeMessageQueue::ForwardQueue do |q|
@@ -50,7 +50,7 @@ queue_manager = FreeMessageQueue::QueueManager.new(true) do
     # but seperate them with a space char
     q.forward_to = ["/fmq_test/test1", "/fmq_test/test2"]
   end
-  
+
   # this is a file system queue that will save each method
   # in the file system until they are polled
   # the message is useful if you want to have a queue that will

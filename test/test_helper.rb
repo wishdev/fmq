@@ -16,12 +16,12 @@ module FifoQueueTests
 	  assert_equal 1, @queue.size
 	  assert_equal td_1.payload, @queue.poll.payload
   end
-  
+
   def test_n_messages
     n = 20
     byte_size = 0
     n.times { |t| byte_size += t.to_s.size }
-    
+
 	  assert_equal 0, @queue.bytes
 	  assert_nil @queue.poll
 	  n.times do |i|
@@ -35,7 +35,7 @@ module FifoQueueTests
 	  assert_equal 0, @queue.bytes
 	  assert_nil @queue.poll
   end
-  
+
   def test_mam_messages
     @queue.put(new_msg("asd"))
     @queue.put(new_msg("asd"))
@@ -52,7 +52,7 @@ module FifoQueueTests
     @queue.clear
     assert_equal 0, @queue.size
   end
-  
+
   def test_queue_bytes
     @queue.put(new_msg("XX" * 40))
     @queue.put(new_msg("X" * 40))
