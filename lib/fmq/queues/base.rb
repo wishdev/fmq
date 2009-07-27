@@ -17,31 +17,6 @@
 # along with Free Message Queue.  If not, see <http://www.gnu.org/licenses/>.
 #
 module FreeMessageQueue
-  # This is the default message implementation in the queue system
-  class Message
-    attr_accessor :next, # reference to next Message if there is one
-      :payload, # the content itself
-      :created_at, # when came the message into the system
-      :content_type, # the content type of the message
-      :option # options hash (META-DATA) for the message
-
-    # Create a message item. The payload is often just a string
-    def initialize(payload, content_type = "text/plain", created_at = Time.new)
-      @payload = payload
-      @created_at = created_at
-      @content_type = content_type
-      @option = {}
-      if block_given? then
-        yield self
-      end
-    end
-
-    # Size of item in bytes
-    def bytes
-      @payload.size
-    end
-  end
-
   # All queue exceptions are raised using this class
   class QueueException < Exception
     attr_accessor :message, :backtrace
