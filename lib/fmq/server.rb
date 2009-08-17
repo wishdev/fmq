@@ -62,23 +62,27 @@ module FreeMessageQueue
       message = @queue_manager.poll(queue_path, request)
 
       unless message.nil? then
-        response = Rack::Response.new([], 200)
+        if message.class == Rack::Response
+          response = message
+        else
+          response = Rack::Response.new([], 200)
 
-        @log.debug("[Server] Response to GET (200)")
-        response.header["CONTENT-TYPE"] = message.content_type
-        response.header["QUEUE_SIZE"] = @queue_manager.queue(queue_path).size.to_s
-        response.header["QUEUE_BYTES"] = @queue_manager.queue(queue_path).bytes.to_s
+          @log.debug("[Server] Response to GET (200)")
+          response.header["CONTENT-TYPE"] = message.content_type
+          response.header["QUEUE_SIZE"] = @queue_manager.queue(queue_path).size.to_s
+          response.header["QUEUE_BYTES"] = @queue_manager.queue(queue_path).bytes.to_s
 
-        # send all options of the message back to the client
-        if message.respond_to?(:option) && message.option.size > 0
-          for option_name in message.option.keys
-            response.header["MESSAGE_#{option_name.gsub("-", "_").upcase}"] = message.option[option_name].to_s
+          # send all options of the message back to the client
+          if message.respond_to?(:option) && message.option.size > 0
+            for option_name in message.option.keys
+              response.header["MESSAGE_#{option_name.gsub("-", "_").upcase}"] = message.option[option_name].to_s
+            end
           end
-        end
 
-        if !message.payload.nil? && message.bytes > 0
-          @log.debug("[Server] Message payload: #{message.payload}")
-          response.write(message.payload)
+          if !message.payload.nil? && message.bytes > 0
+            @log.debug("[Server] Message payload: #{message.payload}")
+            response.write(message.payload)
+          end
         end
       else
         response = Rack::Response.new([], 204)

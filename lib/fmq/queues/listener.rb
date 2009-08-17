@@ -44,7 +44,7 @@ module FreeMessageQueue
     def poll(request)
       @semaphore.synchronize {
         retval = super
-        @listeners << [request["Listener_Host"], request["Listener_Port"]] unless retval || (request && request["Listener_Host"].nil?)
+        @listeners << [request.ip, request['Listener_Port']] unless retval || (request && request['Listener_Port'].nil?)
         retval
       }
     end
@@ -57,7 +57,7 @@ module FreeMessageQueue
           begin
             listener = @listeners.pop
             sock = TCPSocket.open(listener[0], listener[1])
-            sock.puts "Go"
+            sock.close
           rescue
             nil
           end
