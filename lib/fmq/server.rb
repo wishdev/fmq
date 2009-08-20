@@ -64,6 +64,7 @@ module FreeMessageQueue
       unless message.nil? then
         if message.class == Rack::Response
           response = message
+          @log.debug("[Server] Response to GET (#{response.status})")
         else
           response = Rack::Response.new([], 200)
 

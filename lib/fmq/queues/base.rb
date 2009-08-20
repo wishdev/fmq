@@ -36,7 +36,7 @@ module FreeMessageQueue
   # every queue has to have this interface
   class BaseQueue
     # QueueManager refrence
-    attr_accessor :manager
+    attr_accessor :manager, :name
 
     # This value is used to decribe that a constraint has no limit e.g.
     #   max_messages = INFINITE

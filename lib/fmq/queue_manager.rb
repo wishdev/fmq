@@ -83,6 +83,8 @@ module FreeMessageQueue
       queue_class ||= DEFAULT_QUEUE_CLASS
       queue_class = FreeMessageQueue::const_get(queue_class) if queue_class.class == String
       queue_object = queue_class.new(self)
+      queue_object.name = '#{path}'
+      pp queue_object.name
       block.call(queue_object) if block_given?
       @queues[path] = queue_object
       @log.info("[QueueManager] Create queue '#{path}' {type: #{queue_class}, max_messages: #{queue_object.max_messages}, max_size: #{queue_object.max_size}}")
