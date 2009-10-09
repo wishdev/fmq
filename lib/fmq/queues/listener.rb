@@ -38,17 +38,14 @@ module FreeMessageQueue
       super(manager)
       @semaphore = Mutex.new
       @listeners = Array.new
-      @msg_count = 0
     end
 
     # Returns one item from the queue
     def poll(request)
       @semaphore.synchronize {
         retval = super
-
         unless retval || (request && request.env['HTTP_LISTENER_PORT'].nil?)
           @listeners << [request.ip, request.env['HTTP_LISTENER_PORT']]
-          FreeMessageQueue.logger.debug("Queue '#{name}' has #{@listeners.count} listerner(s)")
           retval = Rack::Response.new([], 202)
         end
         retval
@@ -59,10 +56,9 @@ module FreeMessageQueue
     def put(message)
       @semaphore.synchronize {
         super(message)
-        @msg_count += 1
         until @listeners.empty?
           begin
-            listener = @listeners.shift
+            listener = @listeners.pop
             sock = TCPSocket.open(listener[0], listener[1])
             sock.close
           rescue
