@@ -46,6 +46,7 @@ module FreeMessageQueue
         retval = super
         unless retval || (request && request.env['HTTP_LISTENER_PORT'].nil?)
           @listeners << "#{request.ip}:#{request.env['HTTP_LISTENER_PORT']}"
+          @listeners.uniq!
           retval = Rack::Response.new([], 202)
         end
         retval
