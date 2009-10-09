@@ -45,7 +45,7 @@ module FreeMessageQueue
       @semaphore.synchronize {
         retval = super
         unless retval || (request && request.env['HTTP_LISTENER_PORT'].nil?)
-          @listeners << [request.ip, request.env['HTTP_LISTENER_PORT']]
+          @listeners << "#{request.ip}:#{request.env['HTTP_LISTENER_PORT']}"
           retval = Rack::Response.new([], 202)
         end
         retval
@@ -59,7 +59,7 @@ module FreeMessageQueue
         until @listeners.empty?
           begin
             listener = @listeners.pop
-            sock = TCPSocket.open(listener[0], listener[1])
+            sock = TCPSocket.open(*listener.split(':'))
             sock.close
           rescue
             nil
