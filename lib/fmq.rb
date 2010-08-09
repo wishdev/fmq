@@ -33,5 +33,5 @@ end
 # load all parts in right order
 require File.dirname(__FILE__) + "/fmq/boot"
 require File.dirname(__FILE__) + "/fmq/admin"
-require File.dirname(__FILE__) + "/fmq_client"
+require "fmq_client"
 require File.dirname(__FILE__) + "/fmq/server"
