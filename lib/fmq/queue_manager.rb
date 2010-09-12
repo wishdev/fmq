@@ -83,7 +83,7 @@ module FreeMessageQueue
       queue_class ||= DEFAULT_QUEUE_CLASS
       queue_class = FreeMessageQueue::const_get(queue_class) if queue_class.class == String
       queue_object = queue_class.new(self)
-      queue_object.name = '#{path}'
+      queue_object.name = "#{path}"
       block.call(queue_object) if block_given?
       @queues[path] = queue_object
       @log.info("[QueueManager] Create queue '#{path}' {type: #{queue_class}, max_messages: #{queue_object.max_messages}, max_size: #{queue_object.max_size}}")
@@ -96,6 +96,17 @@ module FreeMessageQueue
         @log.info("[QueueManager] Delete queue '#{name}' with #{queue(name).size} messages")
         queue(name).clear if queue(name).respond_to? :clear
         @queues.delete name
+        true
+      else
+        raise QueueManagerException.new("[QueueManager] There is no queue '#{name}'", caller)
+      end
+    end
+
+    # Clear the queue by name (path)
+    def clear_queue(name)
+      if queue_exists? name
+        @log.info("[QueueManager] Clear queue '#{name}' with #{queue(name).size} messages")
+        queue(name).clear if queue(name).respond_to? :clear
         true
       else
         raise QueueManagerException.new("[QueueManager] There is no queue '#{name}'", caller)

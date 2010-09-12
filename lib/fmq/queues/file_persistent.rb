@@ -1,6 +1,8 @@
 #
 # Copyright (c) 2008 Vincent Landgraf
 #
+# Copyright (c) 2010 John W Higgin
+
 # This file is part of the Free Message Queue.
 #
 # Free Message Queue is free software: you can redistribute it and/or modify
@@ -16,11 +18,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Free Message Queue.  If not, see <http://www.gnu.org/licenses/>.
 #
-require File.dirname(__FILE__) + '/base'
+require File.dirname(__FILE__) + '/persistent'
 require "fileutils"
 
 module FreeMessageQueue
   # This a FIFO queue that stores messages in the file system
+  # It is one of the implementations of the PersitentQueue class
   #
   #  queue_manager = FreeMessageQueue::QueueManager.new(true) do
   #    setup_queue "/mail_box/threez", FreeMessageQueue::FilePersistentQueue do |q|
@@ -28,38 +31,7 @@ module FreeMessageQueue
   #      q.max_messages = 10000
   #    end
   #  end
-  #
-  # *NOTE* the put method is not implemented in this queue. It is a poll only queue.
-  class FilePersistentQueue < BaseQueue
-    # Return the
-    def poll(request)
-      check_folder_name
-      messages = all_messages.sort!
-      return nil if messages.size == 0
-
-      remove_message(read_message(messages.first, true))
-    end
-
-    # add one message to the queue (will be saved in file system)
-    def put(message)
-      check_folder_name
-      return false if message.nil?
-
-      add_message(message) # check constraints and update stats
-
-      msg_bin = Marshal.dump(message)
-      File.open(@folder_path + "/#{Time.now.to_f}.msg", "wb") do |f|
-        f.write msg_bin
-      end
-      return true
-    end
-
-    def read_message(filename, delete)
-      msg_bin = File.open(filename, "rb") { |f| f.read }
-      FileUtils.rm filename if delete
-      Marshal.load(msg_bin)
-    end
-
+  class FilePersistentQueue < PersistentQueue
     # *CONFIGURATION* *OPTION*
     # sets the path to the folder that holds all messages, this will
     # create the folder if it doesn't exist
@@ -74,14 +46,32 @@ module FreeMessageQueue
       end
     end
 
-    # remove all items from the queue
-    def clear
-      FileUtils.rm all_messages
-      @size = 0
-      @bytes = 0
+  private
+
+    # Find a message for poll
+    def locate_message
+      prevalidate
+      return all_messages.sort!.first
     end
 
-  private
+    # persist a message to the file system
+    def persist_message(message)
+      msg_bin = Marshal.dump(message)
+      File.open(@folder_path + "/#{Time.now.to_f}.msg", "wb") do |f|
+        f.write msg_bin
+      end
+    end
+
+    def read_message(filename, delete)
+      msg_bin = File.open(filename, "rb") { |f| f.read }
+      FileUtils.rm filename if delete
+      Marshal.load(msg_bin)
+    end
+
+    # remove all items from the queue
+    def clear_messages
+      FileUtils.rm all_messages
+    end
 
     # returns an array with all paths to queue messages
     def all_messages
@@ -89,7 +79,7 @@ module FreeMessageQueue
     end
 
     # raise an exceptin if the folder name is not set
-    def check_folder_name
+    def prevalidate
       raise QueueException.new("[FilePersistentQueue] The folder_path need to be specified", caller) if @folder_path.nil?
     end
   end

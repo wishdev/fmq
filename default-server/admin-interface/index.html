@@ -40,7 +40,8 @@
 				<h2>Queues</h2>
 				<p>
 					<span id="queue-table-space"></span>
-					<input type="button" value="delete" onclick="deleteQueue('queue_to_delete');"/>
+					<input type="button" value="delete" onclick="deleteOrClearQueue('queue_to_modify', 'delete', 'deleted');"/>
+					<input type="button" value="clear"  onclick="deleteOrClearQueue('queue_to_modify', 'clear', 'cleared');" />
 					<input type="button" value="update" onclick="updateTable();" />
 				</p>
 				<!-- CREATE QUEUE -->

@@ -52,6 +52,11 @@ module FreeMessageQueue
             @log.info "[AdminInterface] delete queue"
             @manager.delete_queue(request["path"])
             return OK
+          elsif request["_method"] == "clear" then
+            # ======= DELETE QUEUE
+            @log.info "[AdminInterface] clear queue"
+            @manager.clear_queue(request["path"])
+            return OK
           elsif request["_method"] == "create"
             # ======= CREATE QUEUE
             @log.info "[AdminInterface] create queue"

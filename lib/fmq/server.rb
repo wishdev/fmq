@@ -38,7 +38,7 @@ module FreeMessageQueue
       response = nil
       begin
         # process supported features
-        if request.request_method.match(/^(GET|POST|HEAD|DELETE)$/) then
+        if request.request_method.match(/^(GET|POST|HEAD|DELETE|CLEAR)$/) then
           response = self.send("process_" + request.request_method.downcase, request, queue_path)
         else
           response = client_exception(request, queue_path,
@@ -129,6 +129,14 @@ module FreeMessageQueue
     def process_delete(request, queue_path)
       @log.debug("[Server] Response to DELETE (200)")
       @queue_manager.delete_queue(queue_path)
+
+      response = Rack::Response.new([], 200)
+    end
+
+    # Clear the queue and return server header (HTTP 200)
+    def process_clear(request, queue_path)
+      @log.debug("[Server] Response to CLEAR (200)")
+      @queue_manager.clear_queue(queue_path)
 
       response = Rack::Response.new([], 200)
     end

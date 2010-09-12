@@ -33,7 +33,7 @@ function fillTableSpaceWithQueues(table_space, queues) {
 
 	queues.each ( function (queue) {
 		list += "<div><small>" +
-			'<input type="checkbox" class="queue_to_delete" value="' + queue[0] + '"/><strong>' +
+			'<input type="checkbox" class="queue_to_modify" value="' + queue[0] + '"/><strong>' +
 			queue[0] + "</strong><br />(" + queue[1] + "/" + queue[2] +") bytes (" +
 			queue[3] + "/" + queue[4] + ") messages</small> " +
 			'</div>';
@@ -113,18 +113,18 @@ function createQueue() {
 	});
 }
 
-function deleteQueue(delete_radio) {
+function deleteOrClearQueue(delete_radio, action, verb_action) {
 	radios = document.getElementsByClassName(delete_radio);
 	for (i = 0; i < radios.length; i++) {
 		radio = radios[i]
 		if (radio.checked) {
 			new Ajax.Request(ADMIN_QUEUE_PATH, {
 				method: 'POST',
-				postBody: "_method=delete&path=" + radio.value,
+				postBody: "_method=" + action + "&path=" + radio.value,
 				onSuccess: function(transport) {
 				  updateSelects();
 				  updateTable();
-				  alert("Queue " + radio.value + " successfully deleted");
+				  alert("Queue " + radio.value + " successfully " + verb_action);
 				},
 				onFailure: function(transport){ alert(transport.getHeader("ERROR")) }
 			});

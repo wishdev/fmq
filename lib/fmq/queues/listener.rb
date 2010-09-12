@@ -19,6 +19,7 @@
 require 'socket'
 require 'thread'
 require File.dirname(__FILE__) + '/file_persistent'
+require File.dirname(__FILE__) + '/sequel_persistent'
 
 module FreeMessageQueue
   # The ListenerQueue implements a little wrapper around the
@@ -32,7 +33,7 @@ module FreeMessageQueue
   #      q.max_size = 10.kb
   #    end
   #  end
-  class ListenerQueue < FilePersistentQueue
+  module ListenerQueue
 
     def initialize(manager)
       super(manager)
@@ -68,5 +69,13 @@ module FreeMessageQueue
         end
       }
     end
+  end
+
+  class FileListenerQueue < FilePersistentQueue
+    include ListenerQueue
+  end
+
+  class SequelListenerQueue < SequelPersistentQueue
+    include ListenerQueue
   end
 end
