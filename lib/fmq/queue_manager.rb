@@ -115,15 +115,11 @@ module FreeMessageQueue
 
     # This returns one message from the passed queue
     def poll(name, request)
-      if queue_exists? name
-        @log.debug("[QueueManager] Poll from queue '#{name}' with #{queue(name).size} messages")
-        if queue(name).respond_to? :poll
-          queue_item = queue(name).poll(request)
-        else
-          raise QueueManagerException.new("[QueueManager] You can't poll from queue '#{name}'", caller)
-        end
+      @log.debug("[QueueManager] Poll from queue '#{name}' with #{queue(name).size} messages")
+      if queue(name).respond_to? :poll
+        queue_item = queue(name).poll(request)
       else
-        raise QueueManagerException.new("[QueueManager] There is no queue '#{name}'", caller)
+        raise QueueManagerException.new("[QueueManager] You can't poll from queue '#{name}'", caller)
       end
     end
 
@@ -154,6 +150,26 @@ module FreeMessageQueue
 
     alias post put
 
+    def peek(name, session_id, request)
+      verify_queue(name)
+      @log.debug("[QueueManager] Peek from queue '#{name}' with #{queue(name).size} messages using session_i #{session_id}")
+      if queue(name).respond_to? :peek
+        queue(name).peek(session_id, request)
+      else
+        raise QueueManagerException.new("[QueueManager] You can't peek from queue '#{name}'", caller)
+      end
+    end
+
+    def peek_grab(name, session_id, message_id, request)
+      verify_queue(name)
+      @log.debug("[QueueManager] Peek grabbing from queue '#{name}' with #{queue(name).size} messages")
+      if queue(name).respond_to? :peek_grab
+        queue(name).peek_grab(session_id, message_id, request)
+      else
+        raise QueueManagerException.new("[QueueManager] You can't peek from queue '#{name}'", caller)
+      end
+    end
+
     # Returns the names (paths) of all queues managed by this queue manager
     def queues
       @queues.keys
@@ -162,6 +178,10 @@ module FreeMessageQueue
     # Is the name (path) of the queue in use allready
     def queue_exists?(name)
       !queue(name).nil?
+    end
+
+    def verify_queue(name)
+      raise QueueManagerException.new("[QueueManager] There is no queue '#{name}'", caller) unless queue_exists?(name)
     end
 
     # returns the queue qith the passed name

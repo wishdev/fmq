@@ -20,6 +20,7 @@ require 'socket'
 require 'thread'
 require File.dirname(__FILE__) + '/file_persistent'
 require File.dirname(__FILE__) + '/sequel_persistent'
+require 'ap'
 
 module FreeMessageQueue
   # The ListenerQueue implements a little wrapper around the
@@ -57,7 +58,7 @@ module FreeMessageQueue
     # Puts one message to the queue
     def put(message)
       @semaphore.synchronize {
-        super(message)
+        super
         until @listeners.empty?
           begin
             listener = @listeners.pop
@@ -69,6 +70,21 @@ module FreeMessageQueue
         end
       }
     end
+
+    # Returns one item from the queue
+    def peek(session_id, request)
+      @semaphore.synchronize {
+        retval = super
+        unless retval[0] || (request && request.env['HTTP_LISTENER_PORT'].nil?)
+          @listeners << "#{request.ip}:#{request.env['HTTP_LISTENER_PORT']}"
+          @listeners.uniq!
+          retval = Rack::Response.new([], 202)
+          retval.header['FMQ_QUEUE_SESSION'] = session_id.to_s
+        end
+        retval
+      }
+    end
+
   end
 
   class FileListenerQueue < FilePersistentQueue

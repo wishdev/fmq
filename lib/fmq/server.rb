@@ -2,6 +2,8 @@
 #
 # Copyright (c) 2008 Vincent Landgraf
 #
+# Copyright (c) 2010 John W Higgins
+#
 # This file is part of the Free Message Queue.
 #
 # Free Message Queue is free software: you can redistribute it and/or modify
@@ -19,6 +21,7 @@
 #
 
 require 'yaml'
+require 'securerandom'
 
 module FreeMessageQueue
   # This implements server that plugs the free message queue into a rack enviroment
@@ -32,14 +35,20 @@ module FreeMessageQueue
     # Process incoming request and send them to the right sub processing method like <em>process_get</em>
     def call(env)
       request = Rack::Request.new(env)
+      method = env['REQUEST_METHOD'].upcase
+      if method == "POST"
+        method = request['_method'] || 'POST'
+        method = method.to_s.upcase
+      end
+
       queue_path = request.env["PATH_INFO"]
       @log.debug("[Server] Request params: #{YAML.dump(request.params)})")
 
       response = nil
       begin
         # process supported features
-        if request.request_method.match(/^(GET|POST|HEAD|DELETE|CLEAR)$/) then
-          response = self.send("process_" + request.request_method.downcase, request, queue_path)
+        if method.match(/^(GET|POST|HEAD|DELETE|CLEAR|PEEK|PEEK_GRAB)$/) then
+          response = self.send("process_" + method.downcase, request, queue_path)
         else
           response = client_exception(request, queue_path,
             ArgumentError.new("[Server] Method is not supported '#{method}'"))
@@ -60,37 +69,7 @@ module FreeMessageQueue
     # If there is no item to fetch send an 204 (NoContent) and same as HEAD
     def process_get(request, queue_path)
       message = @queue_manager.poll(queue_path, request)
-
-      unless message.nil? then
-        if message.class == Rack::Response
-          response = message
-          @log.debug("[Server] Response to GET (#{response.status})")
-        else
-          response = Rack::Response.new([], 200)
-
-          @log.debug("[Server] Response to GET (200)")
-          response.header["CONTENT-TYPE"] = message.content_type
-          response.header["QUEUE_SIZE"] = @queue_manager.queue(queue_path).size.to_s
-          response.header["QUEUE_BYTES"] = @queue_manager.queue(queue_path).bytes.to_s
-
-          # send all options of the message back to the client
-          if message.respond_to?(:option) && message.option.size > 0
-            for option_name in message.option.keys
-              response.header["MESSAGE_#{option_name.gsub("-", "_").upcase}"] = message.option[option_name].to_s
-            end
-          end
-
-          if !message.payload.nil? && message.bytes > 0
-            @log.debug("[Server] Message payload: #{message.payload}")
-            response.write(message.payload)
-          end
-        end
-      else
-        response = Rack::Response.new([], 204)
-        @log.debug("[Server] Response to GET (204)")
-        response.header["QUEUE_SIZE"] = response["QUEUE_BYTES"] = 0.to_s
-      end
-      return response
+      prep_message_response('GET', message, queue_path)
     end
 
     # Put new item to the queue and and return sam e as head action (HTTP 200)
@@ -112,7 +91,7 @@ module FreeMessageQueue
       response = Rack::Response.new([], 200)
       response.header["QUEUE_SIZE"] = @queue_manager.queue(queue_path).size.to_s
       response.header["QUEUE_BYTES"] = @queue_manager.queue(queue_path).bytes.to_s
-      return response
+      response
     end
 
     # Just return server header and queue size (HTTP 200)
@@ -122,7 +101,7 @@ module FreeMessageQueue
       response = Rack::Response.new([], 200)
       response.header["QUEUE_SIZE"] = @queue_manager.queue(queue_path).size.to_s
       response.header["QUEUE_BYTES"] = @queue_manager.queue(queue_path).bytes.to_s
-      return response
+      response
     end
 
     # Delete the queue and return server header (HTTP 200)
@@ -139,6 +118,59 @@ module FreeMessageQueue
       @queue_manager.clear_queue(queue_path)
 
       response = Rack::Response.new([], 200)
+    end
+
+    def process_peek(request, queue_path)
+      session_id = request.env['HTTP_FMQ_QUEUE_SESSION'] || SecureRandom.hex(10)
+      message, message_id = @queue_manager.peek(queue_path, session_id, request)
+      response = prep_message_response('PEEK', message, queue_path)
+      if response.status == 200
+        response['FMQ_QUEUE_SESSION'] = session_id.to_s
+        response['FMQ_MESSAGE'] = message_id.to_s
+      end
+      response
+    end
+
+    def process_peek_grab(request, queue_path)
+      session_id = request.env['HTTP_FMQ_QUEUE_SESSION']
+      message_id = request.env['HTTP_FMQ_GRAB_MESSAGE']
+      status = @queue_manager.peek_grab(queue_path, session_id, message_id, request)
+
+      @log.debug("[Server] Response to PEEK_GRAB (#{status})")
+      response = Rack::Response.new([], status)
+    end
+
+    def prep_message_response(method, message, queue_path)
+      unless message.nil?
+        if message.class == Rack::Response
+          response = message
+          @log.debug("[Server] Response to #{method} (#{response.status})")
+        else
+          response = Rack::Response.new([], 200)
+
+          @log.debug("[Server] Response to #{method} (200)")
+          response.header["CONTENT-TYPE"] = message.content_type
+          response.header["QUEUE_SIZE"] = @queue_manager.queue(queue_path).size.to_s
+          response.header["QUEUE_BYTES"] = @queue_manager.queue(queue_path).bytes.to_s
+
+          # send all options of the message back to the client
+          if message.respond_to?(:option) && message.option.size > 0
+            for option_name in message.option.keys
+              response.header["MESSAGE_#{option_name.gsub("-", "_").upcase}"] = message.option[option_name].to_s
+            end
+          end
+
+          if !message.payload.nil? && message.bytes > 0
+            @log.debug("[Server] Message payload: #{message.payload}")
+            response.write(message.payload)
+          end
+        end
+      else
+        response = Rack::Response.new([], 204)
+        @log.debug("[Server] Response to #{method} (204)")
+        response.header["QUEUE_SIZE"] = response["QUEUE_BYTES"] = 0.to_s
+      end
+      response
     end
 
     # Inform the client that he did something wrong (HTTP 400).

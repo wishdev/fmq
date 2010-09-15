@@ -2,7 +2,7 @@
 # Copyright (c) 2008 Vincent Landgraf
 #
 # Copyright (c) 2010 John W Higgins
-
+#
 # This file is part of the Free Message Queue.
 #
 # Free Message Queue is free software: you can redistribute it and/or modify
@@ -30,25 +30,37 @@ module FreeMessageQueue
   #    setup_queue "/mail_box/threez", FreeMessageQueue::SequelPersistentQueue do |q|
   #      q.connection_sting = "postgres://user:password@host:port/database_name"
   #      q.table_name = "messages"
+  #      q.session_table_name = "messages"
   #      q.max_messages = 10000
   #    end
   #  end
   class SequelPersistentQueue < PersistentQueue
     attr_accessor :connection_string
-    attr_reader :table_name
+    attr_reader :session_table_name, :table_name
 
     def bytes
       db_single_value(bytes_query, :bytes)
-#      database[bytes_query].map(:bytes)[0]
+    end
+
+    def peek(session_id, request)
+      message_id = peek_message(session_id)
+      [message_id.nil? ? nil : read_message(message_id, false), message_id]
+    end
+
+    def peek_grab(session_id, message_id, request)
+      db_execute(delete_query(message_id)) == 1 ? 200 : 204
     end
 
     def size
       db_single_value(size_query, :size)
-#      database[size_query].map(:size)[0]
     end
 
     def table_name=(table_name)
       @table_name = table_name
+    end
+
+    def session_table_name=(table_name)
+      @session_table_name = table_name
     end
 
   private
@@ -68,25 +80,28 @@ module FreeMessageQueue
 
     def db_execute(query)
       database do |db|
-        db.run query
+        db.execute_dui query
       end
     end
 
     # Find a message for poll
     def locate_message
       db_single_value(locate_query, :message_id)
-#      database do |db|
-#        id = db[locate_query].map(:id)[0]
-#      end
-#      return id
+    end
+
+    def peek_message(session_id)
+      unless last_message_id = db_single_value(select_session_last_message_query(session_id), :last_message_id)
+        db_execute(insert_session_query(session_id))
+        last_message_id = 0
+      end
+      message_id = db_single_value(peek_query(last_message_id), :message_id)
+      db_execute(update_session_query(message_id || last_message_id, session_id))
+      message_id
     end
 
     # persist a message to the file system
     def persist_message(message)
       db_execute(insert_query(message))
-#      database do |db|
-#        db.run insert_query(message)
-#      end
     end
 
     def read_message(message_id, delete)
@@ -94,19 +109,12 @@ module FreeMessageQueue
       message = FreeMessageQueue::Message.new(message_data[:payload], message_data[:content_type], message_data[:created_at])
       message.option = JSON.parse(message_data[:options])
       db_execute(delete_query(message_id)) if delete
-#      database do |db|
-#        message = db[select_query].map(:message)[0]
-#        db.run delete_query(message_id) if delete
-#      end
       message
     end
 
     # remove all items from the queue
     def clear_messages
       db_execute(clear_query)
-#      database do |db|
-#        db.run clear_query
-#      end
     end
 
     def prevalidate
@@ -133,15 +141,31 @@ module FreeMessageQueue
     end
 
     def delete_query(message_id)
-      "UPDATE #{table_name} SET valid = 0 WHERE message_id = #{message_id}"
+      "UPDATE #{table_name} SET valid = 0 WHERE message_id = #{message_id} AND valid = 1"
     end
 
     def clear_query
-      @clear_query = "UPDATE #{table_name} SET valid = 0 WHERE queue = '#{name}'"
+      "UPDATE #{table_name} SET valid = 0 WHERE queue = '#{name}'"
     end
 
     def insert_query(message)
-      @insert_query = "INSERT INTO #{table_name} (queue, content_type, created_at, options, payload, bytes) VALUES ('#{name}', '#{message.content_type}', '#{message.created_at.to_s}', '#{message.option.to_json}', '#{message.payload}', #{message.payload.length})"
+      "INSERT INTO #{table_name} (queue, content_type, created_at, options, payload, bytes) VALUES ('#{name}', '#{message.content_type}', '#{message.created_at.to_s}', '#{message.option.to_json}', '#{message.payload}', #{message.payload.length})"
+    end
+
+    def peek_query(last_message_id)
+      "SELECT message_id FROM #{table_name} WHERE queue = '#{name}' AND valid = 1 AND message_id > #{last_message_id} ORDER BY message_id LIMIT 1"
+    end
+
+    def select_session_last_message_query(session_id)
+      "SELECT last_message_id FROM #{session_table_name} WHERE queue = '#{name}' AND session_id = '#{session_id}'"
+    end
+
+    def update_session_query(message_id, session_id)
+      "UPDATE #{session_table_name} SET last_message_id = #{message_id}, last_used = now() WHERE queue = '#{name}' AND session_id = '#{session_id}'"
+    end
+
+    def insert_session_query(session_id)
+      "INSERT INTO #{session_table_name} (queue, session_id, last_message_id) VALUES ('#{name}', '#{session_id}', 0)"
     end
   end
 end

@@ -1,6 +1,8 @@
 #
 # Copyright (c) 2008 Vincent Landgraf
 #
+# Copyright (c) 2010 John W Higgins
+#
 # This file is part of the Free Message Queue.
 #
 # Free Message Queue is free software: you can redistribute it and/or modify
@@ -53,7 +55,7 @@ module FreeMessageQueue
             @manager.delete_queue(request["path"])
             return OK
           elsif request["_method"] == "clear" then
-            # ======= DELETE QUEUE
+            # ======= CLEAR QUEUE
             @log.info "[AdminInterface] clear queue"
             @manager.clear_queue(request["path"])
             return OK
